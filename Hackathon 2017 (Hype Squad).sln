@@ -1,0 +1,29 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 11.00
+# Visual Studio 2010
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Hackathon 2017 (Hype Squad)", "Assembly-CSharp.csproj", "{53E6BB58-B35C-0244-B01B-1D36A744E97F}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Hackathon 2017 (Hype Squad)", "Assembly-CSharp-Editor.csproj", "{04F6E154-7654-03E2-4AF9-FCFF82F388A9}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{53E6BB58-B35C-0244-B01B-1D36A744E97F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{53E6BB58-B35C-0244-B01B-1D36A744E97F}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{53E6BB58-B35C-0244-B01B-1D36A744E97F}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{53E6BB58-B35C-0244-B01B-1D36A744E97F}.Release|Any CPU.Build.0 = Release|Any CPU
+		{04F6E154-7654-03E2-4AF9-FCFF82F388A9}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{04F6E154-7654-03E2-4AF9-FCFF82F388A9}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{04F6E154-7654-03E2-4AF9-FCFF82F388A9}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{04F6E154-7654-03E2-4AF9-FCFF82F388A9}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(MonoDevelopProperties) = preSolution
+		StartupItem = Assembly-CSharp.csproj
+	EndGlobalSection
+EndGlobal

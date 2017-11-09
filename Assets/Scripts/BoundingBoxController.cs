@@ -9,6 +9,9 @@ using System.Net.Sockets;
 
 public class BoundingBoxController : MonoBehaviour {
 
+	public VoiceController voiceController;
+	public UIController uiController;
+
 	[HideInInspector]
 	public BoundingBox[] boundingBoxes = new BoundingBox[]{ };
 	public int udpPort;
@@ -17,6 +20,17 @@ public class BoundingBoxController : MonoBehaviour {
 	public float canvasYRange;
 	public float canvasXOffset;
 	public float canvasYOffset;
+
+	[Range(-5f, 5f)]
+	public float xScalePos;
+	[Range(-5f, 5f)]
+	public float xScaleNeg;
+	[Range(-5f, 5f)]
+	public float yScale;
+	[Range(-100f, 100f)]
+	public float xOffset;
+	[Range(-100f, 100f)]
+	public float yOffset;
 
 	private WebSocket websocket;
 	private Thread receiveThread;
@@ -60,10 +74,10 @@ public class BoundingBoxController : MonoBehaviour {
 
 	// Separate thread to read UDP data
 	private void receiveUDPData(){
-		Debug.Log ("Creating Client");
+		Debug.Log ("Creating UDP Client");
 		UdpClient client = new UdpClient (udpPort);
 		client.Client.Blocking = false;
-		Debug.Log ("Client created");
+		Debug.Log ("UDP Client created");
 
 		while (true) {
 			try{
@@ -71,7 +85,6 @@ public class BoundingBoxController : MonoBehaviour {
 				byte[] data = client.Receive(ref anyIP);
 
 				string text = System.Text.Encoding.UTF8.GetString(data);
-				Debug.Log(text);
 				if(text != null){
 					// Parse the JSON and populate the bounding boxes array
 					List<BoundingBox> newBoundingBoxes = new List<BoundingBox>();
@@ -92,12 +105,15 @@ public class BoundingBoxController : MonoBehaviour {
 						float maxX = boundingBoxJSON.GetField("ix").f;
 						float maxY = boundingBoxJSON.GetField("iy").f;
 						newBoundingBoxes.Add(new BoundingBox(x, y, width, height, name, color, maxX, maxY));
+
+						// Add the class to the voice controller and ui controller
+						//uiController.AddClass(name);
+						//voiceController.AddClass(name);
 					}
 
 					// Update the bounding boxes array
 					newBoundingBoxes = convertData(newBoundingBoxes);
 					boundingBoxes = newBoundingBoxes.ToArray();
-					Debug.Log("Length: " + boundingBoxes.Length);
 				}
 			}
 			catch(System.Exception err){
@@ -112,10 +128,23 @@ public class BoundingBoxController : MonoBehaviour {
 
 		// Convert the x, y, width, height of all of the boxes
 		for (int i = 0; i < boundingBoxes.Count; i++) {
-			float newX = ((boundingBoxes[i].x + yoloXOffset) / boundingBoxes[i].yRange) * canvasXRange + canvasXOffset;
-			float newY = ((boundingBoxes[i].y + yoloYOffset) / boundingBoxes[i].xRange) * canvasYRange + canvasYOffset;
-			float newWidth = boundingBoxes[i].width / boundingBoxes[i].yRange * canvasXRange;
-			float newHeight = boundingBoxes[i].height / boundingBoxes[i].xRange * canvasYRange;
+			float newX = ((boundingBoxes[i].x + yoloXOffset) / boundingBoxes[i].xRange) * canvasXRange + canvasXOffset;
+			float newY = ((boundingBoxes[i].y + yoloYOffset) / boundingBoxes[i].yRange) * canvasYRange + canvasYOffset;
+			float newWidth = boundingBoxes[i].width / boundingBoxes[i].xRange * canvasXRange;
+			float newHeight = boundingBoxes[i].height / boundingBoxes[i].yRange * canvasYRange;
+
+			// X Offset calibration
+			newX += xOffset;
+			newY += yOffset;
+
+			// Warping calibration
+			if (newX > 0)
+				newX *= xScalePos;
+			else
+				newX *= xScaleNeg;
+			newY *= yScale;
+			newWidth *= 1.1f;
+			newHeight *= 1.3f;
 
 			BoundingBox newBoundingBox = new BoundingBox (newX, -newY, newWidth, newHeight, boundingBoxes [i].name, boundingBoxes [i].color, boundingBoxes [i].xRange, boundingBoxes [i].yRange);
 
@@ -126,8 +155,8 @@ public class BoundingBoxController : MonoBehaviour {
 	}
 
 	void OnApplicationQuit(){
-		receiveThread.Abort ();
-		receiveThread.Join ();
+		//receiveThread.Abort ();
+		//receiveThread.Join ();
 	}
 
 	// Continuously check if the connection is alive

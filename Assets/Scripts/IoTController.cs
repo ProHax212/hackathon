@@ -8,6 +8,14 @@ public class IoTController : MonoBehaviour {
 	public string websocketConnectionString;
 	[HideInInspector]
 	public Dictionary<string, IoTData> iotData = new Dictionary<string, IoTData>{ };
+	[HideInInspector]
+	public bool isRedLightOn = false;
+	[HideInInspector]
+	public bool isYellowLightOn = false;
+	[HideInInspector]
+	public bool isGreenLightOn = false;
+
+	public VoiceController voiceController;
 
 	private WebSocket websocket;
 
@@ -19,17 +27,42 @@ public class IoTController : MonoBehaviour {
 			this.deviceName = deviceName;
 			this.formattedString = formattedString;
 		}
+
+
+	}
+
+	public struct IoTCommand {
+
+		private IoTData data;
+		private float value;
+		private string type;
+
+		public IoTCommand(string deviceName, string formattedString, float value) {
+			this.data = new IoTData(deviceName, formattedString);
+			this.type = "command";
+			this.value = value;
+		}
+
+		public override string ToString () {
+			JSONObject json = new JSONObject ();
+			json.AddField ("name", this.data.deviceName);
+			json.AddField (this.data.formattedString, this.value);
+			json.AddField ("type", this.type);
+			return json.ToString ();
+		}
+
 	}
 
 	// Use this for initialization
 	void Start () {
 		if (websocketConnectionString != "") {
 			websocket = new WebSocket (websocketConnectionString);
-			//StartCoroutine (CheckConnection ());
+			StartCoroutine (CheckConnection ());
 		}
 
 		iotData = new Dictionary<string, IoTData> ();
 		iotData ["motor"] = new IoTData ("motor", "RPM : 1000\nOutputVoltage : 50");
+		iotData ["patlite"] = new IoTData ("patlite", "Light: Green\nLight: Red");
 	}
 
 	// Update is called once per frame
@@ -51,6 +84,7 @@ public class IoTController : MonoBehaviour {
 	}
 
 	/*
+	 	"type" : "reading"
 		"motor" : {"RPM" : 1000, "OutputVoltage": 50}
 		"patlite" : {}
 	*/
@@ -67,14 +101,34 @@ public class IoTController : MonoBehaviour {
 		websocket.OnMessage += (sender, e) => {
 			Dictionary<string, IoTData> newIotData = new Dictionary<string, IoTData>();
 
-			JSONObject json = new JSONObject(e.Data);
-			foreach(string device in json.keys){
-				string formattedString = "";
-				JSONObject deviceJSON = json.GetField(device);
-				for(int i = 0; i < json.keys.Count; i++){
-					formattedString += json.keys[i].ToString() + " : " + json.GetField(json.keys[i]).ToString();
+			Debug.Log(e.Data);
 
-					if(i < json.keys.Count - 1){
+			JSONObject json = new JSONObject(e.Data);
+
+			// Check if readings
+			if(!json.HasField("type") || json.GetField("type").str != "reading"){
+				return;
+			}
+
+			foreach(string device in json.keys){
+				if(device == "type"){
+					continue;
+				}
+
+				JSONObject deviceJSON = json.GetField(device);
+
+				// Update patlite info if necessary
+				/*if(device == "patlite"){
+					isRedLightOn = (int)deviceJSON.GetField("RedLightControlState").f > 1;
+					isYellowLightOn = (int)deviceJSON.GetField("AmberLightControlState").f > 1;
+					isGreenLightOn = (int)deviceJSON.GetField("GreenLightControlState").f > 1;
+				}*/
+
+				string formattedString = "";
+				for(int i = 0; i < deviceJSON.keys.Count; i++){
+					formattedString += deviceJSON.keys[i].ToString() + " : " + deviceJSON.GetField(deviceJSON.keys[i]).ToString();
+
+					if(i < deviceJSON.keys.Count - 1){
 						formattedString += "\n";
 					}
 				}
@@ -91,6 +145,15 @@ public class IoTController : MonoBehaviour {
 		};
 
 		websocket.ConnectAsync ();
+	}
+
+	public void SendWebsocketMessage(string MessageData) {
+		if (!websocket.IsAlive) {
+			Debug.Log ("IoT websocket is not open, message was not sent");
+			return;
+		}
+
+		websocket.Send (MessageData);
 	}
 
 	// Disconnect the websocket connection
